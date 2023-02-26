@@ -236,7 +236,7 @@ if __name__ == "__main__":
             if f"{cat[1]} in {cty[1]}" not in tc:
                 keywords.append([cat[1], cty[1]])
     for chunk in cnks(keywords,n+2):
-        with ProcessPoolExecutor(max_workers=n) as P:
+        with ProcessPoolExecutor(max_workers=n,max_tasks_per_child=1) as P:
             for key in chunk:
                 P.submit(main,key)
 
