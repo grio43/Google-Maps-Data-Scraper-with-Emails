@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ES
 import time,requests
 from EmailFinding import find_email
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 
 sess = requests.Session()
@@ -229,14 +229,14 @@ if __name__ == "__main__":
     # k = input("Input = ")
     # n =  (input("[?] No of Threads? = "))
     # int(n)
-    n = int(1)
+    n = int(2)
     keywords = []
     for cat in cats: 
         for cty in city: 
             if f"{cat[1]} in {cty[1]}" not in tc:
                 keywords.append([cat[1], cty[1]])
     for chunk in cnks(keywords,n+2):
-        with ThreadPoolExecutor(max_workers=n) as P:
+        with ProcessPoolExecutor(max_workers=n) as P:
             for key in chunk:
                 P.submit(main,key)
 
