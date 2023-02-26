@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import re,requests
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import as_completed
 import urllib3,sys,os
 import pandas as pd
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -91,7 +92,7 @@ class find_email():
                     self.linked.append(linked)
         except Exception as e: pass # print(e)
     def get_pho_emails(self,all_links):
-        with ThreadPoolExecutor(max_workers=100) as ex:
+        with ProcessPoolExecutor(max_workers=5,max_tasks_per_child=1) as ex:
             {ex.submit(self.multi_thred,link) for link in all_links}
             ex.shutdown(wait=True)
             
@@ -143,11 +144,12 @@ if __name__ == "__main__":
     websites = list(df['Website'])
     n = int(input("[?] Input no of Threads?"))
     for chunk in cnks(websites,n):
-        with ThreadPoolExecutor(max_workers=n) as p:
+        with ProcessPoolExecutor(max_workers=n,max_tasks_per_child=1) as p:
             results = [p.submit(main,url) for url in chunk]
             temp = []
             # results = [result.result() for result in results]
             # pd.DataFrame(results).to_csv("Emails_data.csv",index=False,header=not os.path.exists("Emails_data.csv"),mode='a',encoding='utf-8',errors='ignore')
+    
             for result in results:
                 res = result.result()
                 index = df.index[df['Website']==res[0]]
