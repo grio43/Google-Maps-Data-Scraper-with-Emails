@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+import logging
+import datetime
+from threading import current_thread
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -11,6 +14,17 @@ import time,requests
 from EmailFinding import find_email
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+
+# Create and configure logger
+timestamp = datetime.now()
+# debug_filename = "debug_log_" + timestamp.strftime("%Y%m%d_%H%M%S") + ".log"
+debug_filename = "debug.log"
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('ThreadID_%(thread)d:%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+file_handler = logging.FileHandler(debug_filename)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 sess = requests.Session()
 
@@ -29,7 +43,9 @@ def checkInternet():
             sess.get('https://ipinfo.io',timeout=5)
             break
         except:
-            print("Internet Issue...")
+            error_msg = "Internet Issue..."
+            logger.debug(error_msg)
+            print(error_msg)
             time.sleep(1)
 def captcha(driver):
     pageSource = str(driver.page_source)
@@ -80,9 +96,12 @@ def browser():
 
 
 def scraper(driver,key):
+    logger.debug(key)
     global header
     if key == None: return False
     link = f"https://www.google.com/search?q={key[0]} in {key[1]}&hl=en&tbm=lcl"
+
+    logger.debug(link)
     
     checkInternet()
     driver.get(link)
@@ -110,15 +129,18 @@ def scraper(driver,key):
             # print(name)
             try:
                 name = driver.find_element(By.XPATH,'//div[@class="SPZz6b"]/h2/span').text.strip()
+                logger.debug(name)
                 if name in Nameduplicates:
                     continue
                 Nameduplicates.append(name)
             except:
                 name = ''
-            address = ''
-            phone = ''
-            Direction = ''
+                address = ''
+                phone = ''
+                Direction = ''
+
             datas = driver.find_elements(By.XPATH, '//div[contains(@class, "zloOqf") and contains(@class, "PZPZlf")]')
+            logger.debug(datas)
             
             try:
                 rattings = con.find_element(By.CSS_SELECTOR,'span.yi40Hd.YrbPuc').text
@@ -145,17 +167,19 @@ def scraper(driver,key):
                 try:
                     if data.text.find("Address") > -1:
                         address = data.text.replace("Address: ", '')
-                        
+                        logger.debug(address)
                     if data.text.find("Phone") > -1:
                         phone = data.text.replace("Phone: ", '')
-                        
+                        logger.debug(phone)
                 except:
                     pass
             try:
                 website = [element.get_attribute('href') for element in driver.find_elements(By.CSS_SELECTOR,'a.dHS6jb') if element.text.lower().find('website')>-1][0]
-                
+                logger.debug(website)
 
-            except: website=''
+            except:
+                website=''
+            
             try:
                 maps_link = None
                 for ind_url,a in enumerate(driver.find_elements(By.CSS_SELECTOR,'a[jsname="AznF2e"]')):
@@ -164,8 +188,10 @@ def scraper(driver,key):
                         driver.implicitly_wait(0.5)
                         li = driver.find_elements(By.CSS_SELECTOR,'li[jsname="sRYx7b"]')[ind_url]
                         maps_link = li.find_element(By.TAG_NAME,'a').get_attribute('href')
+                        logger.debug(maps_link)
                         break
-            except: maps_link=None
+            except:
+                maps_link=None
             driver.implicitly_wait(0)
             try:
                 imgsrc = driver.find_element(By.CSS_SELECTOR, 'a.llfsGb>div[role="img"]').get_attribute('style')
@@ -190,6 +216,9 @@ def scraper(driver,key):
                 "Img_Src": imgsrc,
                 
             }
+            # logger.debug("--- Complete information ---")
+            # logger.debug(temp)
+            
             print(f'[{datetime.strftime(datetime.now(),"%d-%m-%y %H:%M:%S")}]',name)
             pd.DataFrame([temp]).to_csv(OUTPUT_FILE_PATH,mode="a",index=False,header = header)
             header=False
@@ -199,17 +228,22 @@ def scraper(driver,key):
         try:
             driver.find_element(By.XPATH, '//*[@id="pnnext"]').click()
         except NoSuchElementException:
-            print("Element Not Found")
+            error_msg = "Element Not Found"
+            logger.debug(error_msg)
+            print(error_msg)
             input("")
             break
         except Exception as e:
-            print("Some Error Occur... Retrying")
+            error_msg = "Some Error Occur... Retrying"
+            logger.debug(error_msg)
+            print(error_msg)
         time.sleep(3)
 
 def main(k):
     driver = browser()
     scraper(driver,k)
     with open('Cachelog','a') as f:
+        logger.debug(f"{k[0]} in {k[1]}\n")
         f.write(f"{k[0]} in {k[1]}\n")
 
 cnks = lambda l,n: [l[i:i+n] for i in range(0,len(l),n)]
@@ -227,14 +261,15 @@ if __name__ == "__main__":
     city = pd.read_csv("./input/Cities.csv").to_records()
     tc = load_cache()
     # k = input("Input = ")
-    # n =  (input("[?] No of Threads? = "))
-    # int(n)
-    n = int(5)
+    n =  (input("[?] No of Threads? = "))
+    n = int(n)
     keywords = []
+
     for cat in cats: 
         for cty in city: 
             if f"{cat[1]} in {cty[1]}" not in tc:
                 keywords.append([cat[1], cty[1]])
+    
     for chunk in cnks(keywords,n+2):
         with ProcessPoolExecutor(max_workers=n,max_tasks_per_child=1) as P:
             for key in chunk:
