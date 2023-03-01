@@ -103,6 +103,7 @@ def scraper(driver,key):
 
     logger.debug(link)
     
+    driver.implicitly_wait(10)
     checkInternet()
     driver.get(link)
     if captcha(driver):
@@ -185,14 +186,13 @@ def scraper(driver,key):
                 for ind_url,a in enumerate(driver.find_elements(By.CSS_SELECTOR,'a[jsname="AznF2e"]')):
                     if a.text.strip() == "Menu":
                         a.click()
-                        driver.implicitly_wait(0.5)
+                        driver.implicitly_wait(5)
                         li = driver.find_elements(By.CSS_SELECTOR,'li[jsname="sRYx7b"]')[ind_url]
                         maps_link = li.find_element(By.TAG_NAME,'a').get_attribute('href')
                         logger.debug(maps_link)
                         break
             except:
                 maps_link=None
-            driver.implicitly_wait(0)
             try:
                 imgsrc = driver.find_element(By.CSS_SELECTOR, 'a.llfsGb>div[role="img"]').get_attribute('style')
                 imgsrc = imgsrc.removeprefix('background-image: url(\"').removesuffix("\");")
@@ -228,7 +228,7 @@ def scraper(driver,key):
         try:
             driver.find_element(By.XPATH, '//*[@id="pnnext"]').click()
         except NoSuchElementException:
-            error_msg = "Element Not Found"
+            error_msg = "'//*[@id=\"pnnext\"]' Element Not Found"
             logger.debug(error_msg)
             print(error_msg)
             input("")
@@ -242,9 +242,11 @@ def scraper(driver,key):
 def main(k):
     driver = browser()
     scraper(driver,k)
-    with open('Cachelog','a') as f:
-        logger.debug(f"{k[0]} in {k[1]}\n")
-        f.write(f"{k[0]} in {k[1]}\n")
+    del driver
+    del k
+#    with open('Cachelog','a') as f:
+#        logger.debug(f"{k[0]} in {k[1]}\n")
+#        f.write(f"{k[0]} in {k[1]}\n")
 
 cnks = lambda l,n: [l[i:i+n] for i in range(0,len(l),n)]
 
@@ -264,17 +266,15 @@ if __name__ == "__main__":
     n =  (input("[?] No of Threads? = "))
     n = int(n)
     keywords = []
+    futures = []
 
     for cat in cats: 
         for cty in city: 
             if f"{cat[1]} in {cty[1]}" not in tc:
                 keywords.append([cat[1], cty[1]])
-    
     for chunk in cnks(keywords,n+2):
         with ProcessPoolExecutor(max_workers=n,max_tasks_per_child=1) as P:
             for key in chunk:
                 P.submit(main,key)
-
-            P.shutdown(wait=True)      
-        
-   
+                
+            P.shutdown(wait=True)
