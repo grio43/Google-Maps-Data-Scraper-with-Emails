@@ -110,7 +110,10 @@ def scraper(driver,key):
         checkInternet()
         SOLVE_CAPTCHA(driver)
     
-    if driver.page_source.find('There are no local results matching your search')>-1:return False
+    if driver.page_source.find('There are no local results matching your search')>-1:
+        logger.debug('There are no local results matching your search')
+        print('There are no local results matching your search')
+        return False
     WebDriverWait(driver, 20).until(ES.visibility_of_element_located((By.XPATH, '//div[@jscontroller="AtSb"]')))
     
 
@@ -242,8 +245,8 @@ def scraper(driver,key):
 def main(k):
     driver = browser()
     scraper(driver,k)
-    del driver
-    del k
+    driver.quit()
+    
 #    with open('Cachelog','a') as f:
 #        logger.debug(f"{k[0]} in {k[1]}\n")
 #        f.write(f"{k[0]} in {k[1]}\n")
