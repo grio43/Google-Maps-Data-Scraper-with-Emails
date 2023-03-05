@@ -103,7 +103,7 @@ def scraper(driver,key):
 
     logger.debug(link)
     
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(3)
     checkInternet()
     driver.get(link)
     if captcha(driver):
@@ -114,7 +114,7 @@ def scraper(driver,key):
         logger.debug('There are no local results matching your search')
         print('There are no local results matching your search')
         return False
-    WebDriverWait(driver, 20).until(ES.visibility_of_element_located((By.XPATH, '//div[@jscontroller="AtSb"]')))
+    WebDriverWait(driver, 10).until(ES.visibility_of_element_located((By.XPATH, '//div[@jscontroller="AtSb"]')))
     
 
     Nameduplicates = []
@@ -229,23 +229,30 @@ def scraper(driver,key):
         '''Saving Data to Sheet'''
         
         try:
-            driver.find_element(By.XPATH, '//*[@id="pnnext"]').click()
-        except NoSuchElementException:
-            error_msg = "'//*[@id=\"pnnext\"]' Element Not Found"
-            logger.debug(error_msg)
-            print(error_msg)
-            input("")
-            break
+            driver.implicitly_wait(3)
+            next_links = driver.find_elements(By.XPATH, '//*[@id="pnnext"]')
+            if len(next_links):
+                msg = 'Found "Next" link'
+                print(msg)
+                logger.debug(msg)
+                next_links[0].click()
+            else:
+                msg = 'There is no "Next" link'
+                print(msg)
+                logger.debug(msg)
         except Exception as e:
             error_msg = "Some Error Occur... Retrying"
             logger.debug(error_msg)
+            logger.debug(e)
             print(error_msg)
-        time.sleep(3)
+            print(e)
+        finally:
+            driver.close()
+        time.sleep(1)
 
 def main(k):
     driver = browser()
     scraper(driver,k)
-    driver.quit()
     
 #    with open('Cachelog','a') as f:
 #        logger.debug(f"{k[0]} in {k[1]}\n")
