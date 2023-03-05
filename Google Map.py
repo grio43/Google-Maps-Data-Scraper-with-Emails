@@ -235,6 +235,7 @@ def scraper(driver,key):
                 msg = 'Found "Next" link'
                 print(msg)
                 logger.debug(msg)
+                logger.debug(next_links[0])
                 next_links[0].click()
             else:
                 msg = 'There is no "Next" link'
