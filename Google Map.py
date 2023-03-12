@@ -230,6 +230,8 @@ def scraper(driver,key):
         
         try:
             driver.implicitly_wait(3)
+            
+            # Try looking for pnnext first
             next_links = driver.find_elements(By.XPATH, '//*[@id="pnnext"]')
             if len(next_links):
                 msg = 'Found "Next" link'
@@ -237,10 +239,19 @@ def scraper(driver,key):
                 logger.debug(msg)
                 logger.debug(next_links[0])
                 next_links[0].click()
+            # Try looking for aria-label instead
             else:
-                msg = 'There is no "Next" link'
-                print(msg)
-                logger.debug(msg)
+                next_links = driver.find_elements_by_css_selector('[aria-label="Next"]')
+                if len(next_links):
+                    msg = 'Found "Next" link'
+                    print(msg)
+                    logger.debug(msg)
+                    logger.debug(next_links[0])
+                    next_links[0].click()
+                else:
+                    msg = 'There is no "Next" link'
+                    print(msg)
+                    logger.debug(msg)
         except Exception as e:
             error_msg = "Some Error Occur... Retrying"
             logger.debug(error_msg)
