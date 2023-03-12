@@ -241,7 +241,7 @@ def scraper(driver,key):
                 next_links[0].click()
             # Try looking for aria-label instead
             else:
-                next_links = driver.find_elements(By.XPATH, '//*[@aria-label="Next"]')
+                next_links = driver.find_elements(By.XPATH, '//button[@aria-label="Next"]')
                 if len(next_links):
                     msg = 'Found "Next" link in aria-label'
                     print(msg)
