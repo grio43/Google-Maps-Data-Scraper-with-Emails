@@ -234,22 +234,22 @@ def scraper(driver,key):
             # Try looking for pnnext first
             next_links = driver.find_elements(By.XPATH, '//*[@id="pnnext"]')
             if len(next_links):
-                msg = 'Found "Next" link'
+                msg = 'Found "Next" link in id'
                 print(msg)
                 logger.debug(msg)
                 logger.debug(next_links[0])
                 next_links[0].click()
             # Try looking for aria-label instead
             else:
-                next_links = driver.find_elements_by_css_selector('[aria-label="Next"]')
+                next_links = driver.find_elements(By.XPATH, '//*[@aria-label="Next"]')
                 if len(next_links):
-                    msg = 'Found "Next" link'
+                    msg = 'Found "Next" link in aria-label'
                     print(msg)
                     logger.debug(msg)
                     logger.debug(next_links[0])
                     next_links[0].click()
                 else:
-                    msg = 'There is no "Next" link'
+                    msg = 'There is no "Next" link in id or aria-label'
                     print(msg)
                     logger.debug(msg)
         except Exception as e:
